@@ -1,37 +1,126 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="id">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="theme-color" content="#111827">
-<title>MEXC Smart Trader V1</title>
-<link rel="manifest" href="manifest.json">
-<link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1.0">
+
+  <meta name="theme-color"
+        content="#0b1220">
+
+  <title>MEXC Smart Trader V1</title>
+
+  <link rel="stylesheet"
+        href="style.css?v=2">
+
+  <link rel="manifest"
+        href="manifest.json">
 </head>
+
 <body>
-<header><h1>MEXC Smart Trader</h1><p>V1 • Scanner & Paper Trading</p></header>
-<main>
-<section class="card">
-<h2>Scanner</h2>
-<div class="controls">
-<select id="tf"><option>1H</option><option selected>4H</option><option>1D</option></select>
-<button id="scan">Scan</button>
-</div>
-<div id="status">Belum melakukan scan.</div>
-</section>
-<section class="card">
-<h2>Hasil</h2>
-<div id="results"></div>
-</section>
-<section class="card">
-<h2>Keamanan</h2>
-<ul>
-<li>Mode V1: sinyal + paper trading.</li>
-<li>Withdrawal bot: DILARANG.</li>
-<li>API key/secret tidak boleh ditaruh di aplikasi.</li>
-</ul>
-</section>
-</main>
-<script src="app.js"></script>
+
+  <main class="app">
+
+    <header>
+
+      <div>
+        <h1>MEXC Smart Trader</h1>
+        <p>V1 • Scanner & Paper Trading</p>
+      </div>
+
+      <span class="safe">
+        WITHDRAWAL: DENY
+      </span>
+
+    </header>
+
+
+    <section class="card">
+
+      <h2>Scanner</h2>
+
+      <div class="controls">
+
+        <button
+          class="tf active"
+          data-tf="1H">
+          1H
+        </button>
+
+        <button
+          class="tf"
+          data-tf="4H">
+          4H
+        </button>
+
+        <button
+          class="tf"
+          data-tf="1D">
+          1D
+        </button>
+
+        <button id="scan">
+          Scan
+        </button>
+
+      </div>
+
+      <div id="status">
+        Belum melakukan scan.
+      </div>
+
+    </section>
+
+
+    <section class="card">
+
+      <h2>Hasil</h2>
+
+      <div id="results"></div>
+
+    </section>
+
+
+    <section class="card">
+
+      <h2>Keamanan</h2>
+
+      <ul>
+
+        <li>
+          Mode V1: sinyal + paper trading.
+        </li>
+
+        <li>
+          Withdrawal bot: DILARANG.
+        </li>
+
+        <li>
+          API key/secret tidak boleh
+          ditaruh di aplikasi.
+        </li>
+
+        <li>
+          Untuk live trading nanti,
+          izin withdrawal API harus OFF.
+        </li>
+
+      </ul>
+
+    </section>
+
+
+    <footer>
+      MEXC Smart Trader V1 • Demo
+    </footer>
+
+  </main>
+
+
+  <script src="app.js?v=2"></script>
+
 </body>
+
 </html>
