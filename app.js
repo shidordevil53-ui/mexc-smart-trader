@@ -287,57 +287,48 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   function render(item) {
+  var a = item && item.analysis ? item.analysis : {};
 
-    var a = item.analysis;
+  function n(v) {
+    var x = Number(v);
+    return Number.isFinite(x) ? x : 0;
+  }
 
-    return (
-      '<div class="coin">' +
+  var score = n(a.score);
+  var drop = n(a.drop);
+  var baseRange = n(a.baseRange);
+  var rsi = n(a.rsi);
+  var volumeRatio = n(a.volumeRatio);
+  var stage = a.stage || "WATCH";
+  var tags = Array.isArray(a.tags) ? a.tags : [];
 
+  return (
+    '<div class="coin">' +
       '<div class="row">' +
-      '<strong>' +
-      item.symbol +
-      '</strong>' +
+        '<strong>' + (item.symbol || "UNKNOWN") + '</strong>' +
+        '<span class="score">' + score.toFixed(0) + '/100</span>' +
+      '</div>' +
 
-      '<span class="score">' +
-      a.score +
-      '/100' +
-      '</span>' +
+      '<div>' + stage + '</div>' +
 
+      '<div>' +
+        'Drop: ' + drop.toFixed(1) +
+        '% • Base: ' + baseRange.toFixed(1) + '%' +
       '</div>' +
 
       '<div>' +
-      a.stage +
-      '</div>' +
-
-      '<div>' +
-      'Drop: ' +
-      a.drop.toFixed(1) +
-      '% • Base: ' +
-      a.baseRange.toFixed(1) +
-      '%' +
-      '</div>' +
-
-      '<div>' +
-      'RSI: ' +
-      a.rsi.toFixed(1) +
-      ' • Vol: x' +
-      a.volumeRatio.toFixed(2) +
+        'RSI: ' + rsi.toFixed(1) +
+        ' • Vol: x' + volumeRatio.toFixed(2) +
       '</div>' +
 
       '<div class="bar">' +
-      '<div class="fill" style="width:' +
-      a.score +
-      '%"></div>' +
+        '<div class="fill" style="width:' + score + '%"></div>' +
       '</div>' +
 
-      '<div>' +
-      a.tags.join(" • ") +
-      '</div>' +
-
-      '</div>'
-    );
+      '<div>' + tags.join(" • ") + '</div>' +
+    '</div>'
+  );
   }
-
   async function getSymbols() {
 
     var response = await fetch(
