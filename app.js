@@ -86,11 +86,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
   function analyze(candles) {
 
-    if (!candles || candles.length < 60) {
-      return {
-        score: 0,
-        stage: "DATA KURANG",
-        tags: []
+    if (!Array.isArray(candles) || candles.length < 60) {
+  return {
+    score: 0,
+    drop: 0,
+    baseRange: 0,
+    volumeRatio: 0,
+    rsi: 0,
+    ema20: 0,
+    ema50: 0,
+    stage: "DATA KURANG",
+    tags: []
       };
     }
 
