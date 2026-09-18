@@ -217,7 +217,7 @@ document.addEventListener("DOMContentLoaded", function () {
   async function getSymbols() {
 
     var response = await fetch(
-      "https://api.mexc.com/api/v3/exchangeInfo"
+      "https://mexc-smart-proxysolitary-night-616a.shidordevil53.workers.dev/api/v3/exchangeInfo
     );
 
     if (!response.ok) {
