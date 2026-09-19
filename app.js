@@ -268,7 +268,7 @@ var breakout =
 
     var recentBreakout = false;
     var breakoutIndex = -1;
-
+var recentBreakoutVolumeRatio = 0;
     for (
       var b =
         Math.max(
@@ -313,6 +313,17 @@ var breakout =
 ) {
   recentBreakout = true;
   breakoutIndex = b;
+        recentBreakoutVolumeRatio =
+  avg(volume.slice(
+    Math.max(0, b - 20),
+    b
+  )) > 0
+    ? volume[b] /
+      avg(volume.slice(
+        Math.max(0, b - 20),
+        b
+      ))
+    : 0;
       }
       }
 
