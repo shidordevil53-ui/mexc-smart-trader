@@ -519,7 +519,7 @@ function analyze(candles) {
     score += 2;
     tags.push("RSI mulai panas");
   } else if (rsi14 > 78) {
-    score -= 0;
+    score += 0;
     tags.push("RSI tinggi");
   }
 
