@@ -1,6 +1,5 @@
-alert("APP.JS FILE TERBACA");
 document.addEventListener("DOMContentLoaded", function () {
-alert("APP.JS AKTIF");
+
   var status = document.getElementById("status");
   var results = document.getElementById("results");
   var scanButton = document.getElementById("scan");
@@ -88,566 +87,538 @@ alert("APP.JS AKTIF");
   function analyze(candles) {
 
     if (!Array.isArray(candles) || candles.length < 60) {
-  return {
-    score: 0,
-    drop: 0,
-    baseRange: 0,
-    volumeRatio: 0,
-    rsi: 0,
-    ema20: 0,
-    ema50: 0,
-    stage: "DATA KURANG",
-    tags: []
+      return {
+        score: 0,
+        drop: 0,
+        baseRange: 0,
+        volumeRatio: 0,
+        rsi: 0,
+        ema20: 0,
+        ema50: 0,
+        stage: "DATA KURANG",
+        tags: []
       };
     }
 
     var close = [];
     var volume = [];
+    var lows = [];
 
     for (var i = 0; i < candles.length; i++) {
-      close.push(Number(candles[i][4]));
-      volume.push(Number(candles[i][5]));
+
+      if (
+        !Array.isArray(candles[i]) ||
+        candles[i].length < 6
+      ) {
+        continue;
+      }
+
+      var c = Number(candles[i][4]);
+      var v = Number(candles[i][5]);
+      var low = Number(candles[i][3]);
+
+      if (
+        Number.isFinite(c) &&
+        Number.isFinite(v) &&
+        c > 0
+      ) {
+        close.push(c);
+        volume.push(v);
+
+        if (Number.isFinite(low)) {
+          lows.push(low);
+        } else {
+          lows.push(c);
+        }
+      }
     }
 
-    var current = close[close.length - 1];
+    if (close.length < 60) {
+      return {
+        score: 0,
+        drop: 0,
+        baseRange: 0,
+        volumeRatio: 0,
+        rsi: 0,
+        ema20: 0,
+        ema50: 0,
+        stage: "DATA KURANG",
+        tags: []
+      };
+    }
 
-    var ema20 = ema(close, 20);
-    var ema50 = ema(close, 50);
+    var current =
+      close[close.length - 1];
 
-    var rsi14 = rsi(close, 14);
+    var ema20 =
+      ema(close, 20);
 
-    var macdFast = ema(close, 12);
-    var macdSlow = ema(close, 26);
-    var macd = macdFast - macdSlow;
+    var ema50 =
+      ema(close, 50);
 
-    var recentVol =
-      avg(volume.slice(-5));
+    var rsi14 =
+      rsi(close, 14);
 
-    var oldVol =
-      avg(volume.slice(-25, -5));
+    var macdFast =
+      ema(close, 12);
 
-    var volumeRatio =
-      oldVol > 0 ? recentVol / oldVol : 0;
+    var macdSlow =
+      ema(close, 26);
 
-    var lookback =
-      Math.min(100, close.length - 1);
+    var macd =
+      macdFast - macdSlow;
 
-    var oldPrice =
-      close[close.length - 1 - lookback];
+    /* DROP */
 
-    var drop =
-      ((oldPrice - current) / oldPrice) * 100;
+    var peakEnd =
+      Math.max(20, close.length - 30);
 
-    if (drop < 0) drop = 0;
+    var historicalPrices =
+      close.slice(0, peakEnd);
 
-    var baseClose =
-      close.slice(-30);
-
-    var baseHigh =
-      Math.max.apply(null, baseClose);
-
-    var baseLow =
-      Math.min.apply(null, baseClose);
-
-    var baseRange =
-      baseLow > 0
-        ? ((baseHigh - baseLow) / baseLow) * 100
-        : 999;
-
-    var previousHigh =
+    var peakPrice =
       Math.max.apply(
         null,
-        close.slice(-21, -1)
+        historicalPrices
+      );
+
+    var drop = 0;
+
+    if (
+      peakPrice > 0 &&
+      current < peakPrice
+    ) {
+      drop =
+        ((peakPrice - current) /
+        peakPrice) * 100;
+    }
+
+    /* BASE */
+
+    var baseClose =
+      close.slice(-40);
+
+    var baseHigh =
+      Math.max.apply(
+        null,
+        baseClose
+      );
+
+    var baseLow =
+      Math.min.apply(
+        null,
+        baseClose
+      );
+
+    var baseRange = 999;
+
+    if (baseLow > 0) {
+      baseRange =
+        ((baseHigh - baseLow) /
+        baseLow) * 100;
+    }
+
+    /* VOLUME BASE */
+
+    var baseEarlyVol =
+      avg(volume.slice(-40, -20));
+
+    var baseLateVol =
+      avg(volume.slice(-20));
+
+    var volumeContracting =
+      baseEarlyVol > 0 &&
+      baseLateVol <
+      baseEarlyVol * 0.90;
+
+    /* RESISTANCE */
+
+    var previousCloses =
+      close.slice(-21, -1);
+
+    var resistance =
+      Math.max.apply(
+        null,
+        previousCloses
       );
 
     var breakout =
-      current > previousHigh;
+      current >
+      resistance * 1.002;
+
+    /* BREAKOUT VOLUME */
+
+    var previousVolume =
+      avg(volume.slice(-21, -1));
+
+    var breakoutVolumeRatio =
+      previousVolume > 0
+        ? volume[volume.length - 1] /
+          previousVolume
+        : 0;
+
+    /* RECENT BREAKOUT */
+
+    var recentBreakout = false;
+    var breakoutIndex = -1;
+
+    for (
+      var b =
+        Math.max(
+          20,
+          close.length - 15
+        );
+      b < close.length;
+      b++
+    ) {
+
+      var prior20 =
+        close.slice(
+          Math.max(0, b - 20),
+          b
+        );
+
+      if (prior20.length < 20) {
+        continue;
+      }
+
+      var priorResistance =
+        Math.max.apply(
+          null,
+          prior20
+        );
+
+      if (
+        close[b] >
+        priorResistance * 1.002
+      ) {
+        recentBreakout = true;
+        breakoutIndex = b;
+      }
+    }
+
+    /* RETEST */
+
+    var retest = false;
+
+    if (
+      recentBreakout &&
+      breakoutIndex >= 0
+    ) {
+
+      var retestStart =
+        Math.max(
+          breakoutIndex + 1,
+          close.length - 8
+        );
+
+      for (
+        var r =
+          retestStart;
+        r < close.length;
+        r++
+      ) {
+
+        var candleLow =
+          lows[r];
+
+        if (
+          !Number.isFinite(
+            candleLow
+          )
+        ) {
+          continue;
+        }
+
+        if (
+          candleLow <=
+            resistance * 1.02 &&
+          close[r] >=
+            resistance * 0.98
+        ) {
+          retest = true;
+        }
+      }
+    }
+
+    /* HIGHER LOW */
+
+    var recentLow =
+      Math.min.apply(
+        null,
+        close.slice(-8)
+      );
+
+    var previousLow =
+      Math.min.apply(
+        null,
+        close.slice(-16, -8)
+      );
+
+    var higherLow =
+      recentLow >
+      previousLow;
+
+    /* SCORE */
 
     var score = 0;
     var tags = [];
 
-    /*
-      DROP
-    */
-
-    if (drop >= 80) {
+    if (drop >= 90) {
       score += 25;
+      tags.push("Drop >90%");
+    } else if (drop >= 80) {
+      score += 23;
       tags.push("Drop >80%");
-    } else if (drop >= 60) {
+    } else if (drop >= 70) {
       score += 20;
-      tags.push("Drop >60%");
-    } else if (drop >= 40) {
-      score += 12;
-      tags.push("Drop >40%");
+      tags.push("Drop >70%");
+    } else if (drop >= 50) {
+      score += 15;
+      tags.push("Drop >50%");
+    } else if (drop >= 30) {
+      score += 8;
+      tags.push("Drop >30%");
     }
 
-    /*
-      BASE
-    */
-
-    if (baseRange <= 15) {
+    if (baseRange <= 10) {
       score += 20;
+      tags.push("Base sangat rapat");
+    } else if (baseRange <= 15) {
+      score += 17;
       tags.push("Base rapat");
     } else if (baseRange <= 25) {
       score += 12;
       tags.push("Base");
+    } else if (baseRange <= 35) {
+      score += 5;
+      tags.push("Base lebar");
     }
 
-    /*
-      BREAKOUT
-    */
+    if (volumeContracting) {
+      score += 8;
+      tags.push("Volume base mengecil");
+    }
 
     if (breakout) {
-      score += 20;
+      score += 18;
       tags.push("Breakout");
     }
 
-    /*
-      VOLUME
-    */
-
-    if (volumeRatio >= 2) {
-      score += 20;
-      tags.push("Volume x2");
-    } else if (volumeRatio >= 1.5) {
+    if (breakoutVolumeRatio >= 3) {
       score += 15;
-      tags.push("Volume kuat");
-    } else if (volumeRatio >= 1.2) {
+      tags.push("Volume breakout x3");
+    } else if (breakoutVolumeRatio >= 2) {
+      score += 12;
+      tags.push("Volume breakout x2");
+    } else if (breakoutVolumeRatio >= 1.5) {
       score += 8;
-      tags.push("Volume naik");
-function analyze(candles) {
-
-  if (!Array.isArray(candles) || candles.length < 60) {
-    return {
-      score: 0,
-      drop: 0,
-      baseRange: 0,
-      volumeRatio: 0,
-      rsi: 0,
-      ema20: 0,
-      ema50: 0,
-      stage: "DATA KURANG",
-      tags: []
-    };
-  }
-
-  var close = [];
-  var volume = [];
-
-  for (var i = 0; i < candles.length; i++) {
-    if (!Array.isArray(candles[i]) || candles[i].length < 6) {
-      continue;
+      tags.push("Volume breakout kuat");
     }
 
-    var c = Number(candles[i][4]);
-    var v = Number(candles[i][5]);
-
-    if (Number.isFinite(c) && Number.isFinite(v) && c > 0) {
-      close.push(c);
-      volume.push(v);
-    }
-  }
-
-  if (close.length < 60) {
-    return {
-      score: 0,
-      drop: 0,
-      baseRange: 0,
-      volumeRatio: 0,
-      rsi: 0,
-      ema20: 0,
-      ema50: 0,
-      stage: "DATA KURANG",
-      tags: []
-    };
-  }
-
-  var current = close[close.length - 1];
-
-  /* =========================
-     TREND
-  ========================= */
-
-  var ema20 = ema(close, 20);
-  var ema50 = ema(close, 50);
-  var rsi14 = rsi(close, 14);
-
-  var macdFast = ema(close, 12);
-  var macdSlow = ema(close, 26);
-  var macd = macdFast - macdSlow;
-
-  /* =========================
-     HISTORICAL DROP
-  ========================= */
-
-  var peakEnd = Math.max(20, close.length - 30);
-  var historicalPrices = close.slice(0, peakEnd);
-
-  var peakPrice = Math.max.apply(null, historicalPrices);
-
-  var drop = 0;
-
-  if (peakPrice > 0 && current < peakPrice) {
-    drop = ((peakPrice - current) / peakPrice) * 100;
-  }
-
-  /* =========================
-     BASE 40 CANDLE
-  ========================= */
-
-  var baseClose = close.slice(-40);
-
-  var baseHigh = Math.max.apply(null, baseClose);
-  var baseLow = Math.min.apply(null, baseClose);
-
-  var baseRange = 999;
-
-  if (baseLow > 0) {
-    baseRange =
-      ((baseHigh - baseLow) / baseLow) * 100;
-  }
-
-  /* =========================
-     BASE VOLUME CONTRACTION
-  ========================= */
-
-  var baseEarlyVol =
-    avg(volume.slice(-40, -20));
-
-  var baseLateVol =
-    avg(volume.slice(-20));
-
-  var volumeContracting =
-    baseEarlyVol > 0 &&
-    baseLateVol < baseEarlyVol * 0.90;
-
-  /* =========================
-     BREAKOUT RESISTANCE
-  ========================= */
-
-  var previousCloses =
-    close.slice(-21, -1);
-
-  var resistance =
-    Math.max.apply(null, previousCloses);
-
-  var breakout =
-    current > resistance * 1.002;
-
-  /* =========================
-     BREAKOUT VOLUME
-  ========================= */
-
-  var previousVolume =
-    avg(volume.slice(-21, -1));
-
-  var breakoutVolumeRatio =
-    previousVolume > 0
-      ? volume[volume.length - 1] / previousVolume
-      : 0;
-
-  /* =========================
-     RECENT BREAKOUT
-  ========================= */
-
-  var recentBreakout = false;
-
-  var breakoutIndex = -1;
-
-  for (
-    var b = Math.max(20, close.length - 15);
-    b < close.length;
-    b++
-  ) {
-
-    var prior20 =
-      close.slice(Math.max(0, b - 20), b);
-
-    if (prior20.length < 20) {
-      continue;
+    if (current > ema20) {
+      score += 5;
+      tags.push("Di atas EMA20");
     }
 
-    var priorResistance =
-      Math.max.apply(null, prior20);
-
-    if (close[b] > priorResistance * 1.002) {
-      recentBreakout = true;
-      breakoutIndex = b;
+    if (ema20 > ema50) {
+      score += 5;
+      tags.push("EMA20 > EMA50");
     }
-  }
 
-  /* =========================
-     RETEST DETECTION
-  ========================= */
+    if (higherLow) {
+      score += 4;
+      tags.push("Higher Low");
+    }
 
-  var retest = false;
+    if (
+      rsi14 >= 45 &&
+      rsi14 <= 70
+    ) {
+      score += 5;
+      tags.push("RSI sehat");
+    } else if (
+      rsi14 > 70 &&
+      rsi14 <= 78
+    ) {
+      score += 2;
+      tags.push("RSI mulai panas");
+    } else if (
+      rsi14 > 78
+    ) {
+      score += 0;
+      tags.push("RSI tinggi");
+    }
 
-  if (recentBreakout && breakoutIndex >= 0) {
+    if (macd > 0) {
+      score += 5;
+      tags.push("MACD positif");
+    }
 
-    var retestStart =
-      Math.max(breakoutIndex + 1, close.length - 8);
+    if (retest) {
+      score += 15;
+      tags.push("Retest valid");
+    }
 
-    for (
-      var r = retestStart;
-      r < close.length;
-      r++
+    if (score > 100) {
+      score = 100;
+    }
+
+    /* STAGE */
+
+    var stage = "WATCH";
+
+    if (
+      retest &&
+      current >= ema20 &&
+      ema20 >= ema50
     ) {
 
-      var candleLow =
-        Number(candles[r] && candles[r][3]);
+      stage =
+        "RETEST → MARKUP";
 
-      if (!Number.isFinite(candleLow)) {
-        continue;
-      }
+    } else if (
+      breakout &&
+      breakoutVolumeRatio >= 1.5 &&
+      current > ema20
+    ) {
 
-      if (
-        candleLow <= resistance * 1.02 &&
-        close[r] >= resistance * 0.98
-      ) {
-        retest = true;
-      }
+      stage =
+        "BREAKOUT → MARKUP";
+
+    } else if (
+      baseRange <= 25 &&
+      volumeContracting
+    ) {
+
+      stage =
+        "BASE → SIAP BREAKOUT";
+
+    } else if (
+      drop >= 50 &&
+      baseRange <= 35
+    ) {
+
+      stage =
+        "DROP → BASE";
+
+    } else if (
+      current > ema20 &&
+      ema20 > ema50
+    ) {
+
+      stage = "MARKUP";
     }
+
+    return {
+      score: score,
+      drop: drop,
+      baseRange: baseRange,
+      volumeRatio:
+        breakoutVolumeRatio,
+      rsi: rsi14,
+      ema20: ema20,
+      ema50: ema50,
+      stage: stage,
+      tags: tags
+    };
   }
-
-  /* =========================
-     HIGHER LOW
-  ========================= */
-
-  var recentLow =
-    Math.min.apply(null, close.slice(-8));
-
-  var previousLow =
-    Math.min.apply(null, close.slice(-16, -8));
-
-  var higherLow =
-    recentLow > previousLow;
-
-  /* =========================
-     SCORING
-  ========================= */
-
-  var score = 0;
-  var tags = [];
-
-  /* DROP */
-
-  if (drop >= 90) {
-    score += 25;
-    tags.push("Drop >90%");
-  } else if (drop >= 80) {
-    score += 23;
-    tags.push("Drop >80%");
-  } else if (drop >= 70) {
-    score += 20;
-    tags.push("Drop >70%");
-  } else if (drop >= 50) {
-    score += 15;
-    tags.push("Drop >50%");
-  } else if (drop >= 30) {
-    score += 8;
-    tags.push("Drop >30%");
-  }
-
-  /* BASE */
-
-  if (baseRange <= 10) {
-    score += 20;
-    tags.push("Base sangat rapat");
-  } else if (baseRange <= 15) {
-    score += 17;
-    tags.push("Base rapat");
-  } else if (baseRange <= 25) {
-    score += 12;
-    tags.push("Base");
-  } else if (baseRange <= 35) {
-    score += 5;
-    tags.push("Base lebar");
-  }
-
-  /* VOLUME BASE */
-
-  if (volumeContracting) {
-    score += 8;
-    tags.push("Volume base mengecil");
-  }
-
-  /* BREAKOUT */
-
-  if (breakout) {
-    score += 18;
-    tags.push("Breakout");
-  }
-
-  /* BREAKOUT VOLUME */
-
-  if (breakoutVolumeRatio >= 3) {
-    score += 15;
-    tags.push("Volume breakout x3");
-  } else if (breakoutVolumeRatio >= 2) {
-    score += 12;
-    tags.push("Volume breakout x2");
-  } else if (breakoutVolumeRatio >= 1.5) {
-    score += 8;
-    tags.push("Volume breakout kuat");
-  }
-
-  /* TREND */
-
-  if (current > ema20) {
-    score += 5;
-    tags.push("Di atas EMA20");
-  }
-
-  if (ema20 > ema50) {
-    score += 5;
-    tags.push("EMA20 > EMA50");
-  }
-
-  /* HIGHER LOW */
-
-  if (higherLow) {
-    score += 4;
-    tags.push("Higher Low");
-  }
-
-  /* RSI */
-
-  if (rsi14 >= 45 && rsi14 <= 70) {
-    score += 5;
-    tags.push("RSI sehat");
-  } else if (rsi14 > 70 && rsi14 <= 78) {
-    score += 2;
-    tags.push("RSI mulai panas");
-  } else if (rsi14 > 78) {
-    score += 0;
-    tags.push("RSI tinggi");
-  }
-
-  /* MACD */
-
-  if (macd > 0) {
-    score += 5;
-    tags.push("MACD positif");
-  }
-
-  /* RETEST BONUS */
-
-  if (retest) {
-    score += 15;
-    tags.push("Retest valid");
-  }
-
-  if (score > 100) {
-    score = 100;
-  }
-
-  /* =========================
-     STAGE
-  ========================= */
-
-  var stage = "WATCH";
-
-  if (
-    retest &&
-    current >= ema20 &&
-    ema20 >= ema50
-  ) {
-
-    stage = "RETEST → MARKUP";
-
-  } else if (
-    breakout &&
-    breakoutVolumeRatio >= 1.5 &&
-    current > ema20
-  ) {
-
-    stage = "BREAKOUT → MARKUP";
-
-  } else if (
-    baseRange <= 25 &&
-    volumeContracting
-  ) {
-
-    stage = "BASE → SIAP BREAKOUT";
-
-  } else if (
-    drop >= 50 &&
-    baseRange <= 35
-  ) {
-
-    stage = "DROP → BASE";
-
-  } else if (
-    current > ema20 &&
-    ema20 > ema50
-  ) {
-
-    stage = "MARKUP";
-
-  }
-
-  return {
-    score: score,
-    drop: drop,
-    baseRange: baseRange,
-    volumeRatio: breakoutVolumeRatio,
-    rsi: rsi14,
-    ema20: ema20,
-    ema50: ema50,
-    stage: stage,
-    tags: tags
-  };
-}
 
   function render(item) {
-  var a = item && item.analysis ? item.analysis : {};
 
-  function n(v) {
-    var x = Number(v);
-    return Number.isFinite(x) ? x : 0;
-  }
+    var a =
+      item && item.analysis
+        ? item.analysis
+        : {};
 
-  var score = n(a.score);
-  var drop = n(a.drop);
-  var baseRange = n(a.baseRange);
-  var rsi = n(a.rsi);
-  var volumeRatio = n(a.volumeRatio);
-  var stage = a.stage || "WATCH";
-  var tags = Array.isArray(a.tags) ? a.tags : [];
+    function n(v) {
+      var x = Number(v);
+      return Number.isFinite(x)
+        ? x
+        : 0;
+    }
 
-  return (
-    '<div class="coin">' +
+    var score =
+      n(a.score);
+
+    var drop =
+      n(a.drop);
+
+    var baseRange =
+      n(a.baseRange);
+
+    var rsiValue =
+      n(a.rsi);
+
+    var volumeRatio =
+      n(a.volumeRatio);
+
+    var stage =
+      a.stage || "WATCH";
+
+    var tags =
+      Array.isArray(a.tags)
+        ? a.tags
+        : [];
+
+    return (
+      '<div class="coin">' +
+
       '<div class="row">' +
-        '<strong>' + (item.symbol || "UNKNOWN") + '</strong>' +
-        '<span class="score">' + score.toFixed(0) + '/100</span>' +
+
+      '<strong>' +
+      (item.symbol || "UNKNOWN") +
+      '</strong>' +
+
+      '<span class="score">' +
+      score.toFixed(0) +
+      '/100' +
+      '</span>' +
+
       '</div>' +
 
-      '<div>' + stage + '</div>' +
-
       '<div>' +
-        'Drop: ' + drop.toFixed(1) +
-        '% • Base: ' + baseRange.toFixed(1) + '%' +
+      stage +
       '</div>' +
 
       '<div>' +
-        'RSI: ' + rsi.toFixed(1) +
-        ' • Vol: x' + volumeRatio.toFixed(2) +
+      'Drop: ' +
+      drop.toFixed(1) +
+      '% • Base: ' +
+      baseRange.toFixed(1) +
+      '%' +
+      '</div>' +
+
+      '<div>' +
+      'RSI: ' +
+      rsiValue.toFixed(1) +
+      ' • Vol: x' +
+      volumeRatio.toFixed(2) +
       '</div>' +
 
       '<div class="bar">' +
-        '<div class="fill" style="width:' + score + '%"></div>' +
+
+      '<div class="fill" style="width:' +
+      score +
+      '%"></div>' +
+
       '</div>' +
 
-      '<div>' + tags.join(" • ") + '</div>' +
-    '</div>'
-  );
+      '<div>' +
+      tags.join(" • ") +
+      '</div>' +
+
+      '</div>'
+    );
   }
+
   async function getSymbols() {
 
-    var response = await fetch(
-      WORKER +
-      "/api/v3/ticker/24hr"
-    );
+    var response =
+      await fetch(
+        WORKER +
+        "/api/v3/ticker/24hr"
+      );
 
     if (!response.ok) {
       throw new Error(
@@ -660,7 +631,11 @@ function analyze(candles) {
 
     var list = [];
 
-    for (var i = 0; i < data.length; i++) {
+    for (
+      var i = 0;
+      i < data.length;
+      i++
+    ) {
 
       var item = data[i];
 
@@ -670,33 +645,38 @@ function analyze(candles) {
       ) {
 
         var volume =
-          Number(item.quoteVolume || 0);
+          Number(
+            item.quoteVolume || 0
+          );
 
         if (volume > 0) {
 
           list.push({
-            symbol: item.symbol,
-            volume: volume
+            symbol:
+              item.symbol,
+            volume:
+              volume
           });
-
         }
       }
     }
 
-    list.sort(function (a, b) {
-      return b.volume - a.volume;
-    });
-
-    /*
-      Batasi pair agar HP tidak terlalu berat.
-      Nanti bisa kita naikkan.
-    */
+    list.sort(
+      function (a, b) {
+        return (
+          b.volume -
+          a.volume
+        );
+      }
+    );
 
     return list
       .slice(0, 40)
-      .map(function (x) {
-        return x.symbol;
-      });
+      .map(
+        function (x) {
+          return x.symbol;
+        }
+      );
   }
 
   async function getKlines(symbol) {
@@ -711,14 +691,15 @@ function analyze(candles) {
       encodeURIComponent(symbol) +
       "&interval=" +
       interval +
-      "&limit=120";
+      "&limit=1000";
 
     var response =
       await fetch(url);
 
     if (!response.ok) {
       throw new Error(
-        "Kline gagal: " + symbol
+        "Kline gagal: " +
+        symbol
       );
     }
 
@@ -728,7 +709,6 @@ function analyze(candles) {
   async function scanMarket() {
 
     scanButton.disabled = true;
-
     results.innerHTML = "";
 
     try {
@@ -754,7 +734,8 @@ function analyze(candles) {
         i++
       ) {
 
-        var symbol = symbols[i];
+        var symbol =
+          symbols[i];
 
         setStatus(
           "Scanning " +
@@ -768,28 +749,35 @@ function analyze(candles) {
         try {
 
           var candles =
-            await getKlines(symbol);
+            await getKlines(
+              symbol
+            );
 
           var analysis =
             analyze(candles);
 
           resultList.push({
-            symbol: symbol,
-            analysis: analysis
+            symbol:
+              symbol,
+            analysis:
+              analysis
           });
 
         } catch (error) {
 
           console.log(
-            "Skip " + symbol,
+            "Skip " +
+            symbol,
             error
           );
-
         }
 
         await new Promise(
           function (resolve) {
-            setTimeout(resolve, 150);
+            setTimeout(
+              resolve,
+              150
+            );
           }
         );
       }
@@ -812,8 +800,9 @@ function analyze(candles) {
       ) {
 
         html +=
-          render(resultList[j]);
-
+          render(
+            resultList[j]
+          );
       }
 
       results.innerHTML =
@@ -846,32 +835,39 @@ function analyze(candles) {
 
   document
     .querySelectorAll(".tf")
-    .forEach(function (button) {
+    .forEach(
+      function (button) {
 
-      button.addEventListener(
-        "click",
-        function () {
+        button.addEventListener(
+          "click",
+          function () {
 
-          document
-            .querySelectorAll(".tf")
-            .forEach(function (x) {
-              x.classList.remove("active");
-            });
+            document
+              .querySelectorAll(".tf")
+              .forEach(
+                function (x) {
+                  x.classList.remove(
+                    "active"
+                  );
+                }
+              );
 
-          button.classList.add("active");
+            button.classList.add(
+              "active"
+            );
 
-          timeframe =
-            button.dataset.tf;
+            timeframe =
+              button.dataset.tf;
 
-          setStatus(
-            "Timeframe " +
-            timeframe +
-            " dipilih."
-          );
-        }
-      );
-
-    });
+            setStatus(
+              "Timeframe " +
+              timeframe +
+              " dipilih."
+            );
+          }
+        );
+      }
+    );
 
   scanButton.addEventListener(
     "click",
