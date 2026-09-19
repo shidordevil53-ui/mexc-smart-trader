@@ -1,5 +1,5 @@
 document.addEventListener("DOMContentLoaded", function () {
-
+alert("APP.JS AKTIF");
   var status = document.getElementById("status");
   var results = document.getElementById("results");
   var scanButton = document.getElementById("scan");
