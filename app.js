@@ -710,7 +710,7 @@ function analyze(candles) {
       encodeURIComponent(symbol) +
       "&interval=" +
       interval +
-      "&limit=1000";
+      "&limit=120";
 
     var response =
       await fetch(url);
