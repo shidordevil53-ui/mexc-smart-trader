@@ -243,20 +243,26 @@ document.addEventListener("DOMContentLoaded", function () {
         previousCloses
       );
 
-    var breakout =
-      current >
-      resistance * 1.002;
+    var priceBreakout =
+  current >
+  resistance * 1.002;
 
-    /* BREAKOUT VOLUME */
+/* BREAKOUT VOLUME */
 
-    var previousVolume =
-      avg(volume.slice(-21, -1));
+var previousVolume =
+  avg(volume.slice(-21, -1));
 
-    var breakoutVolumeRatio =
-      previousVolume > 0
-        ? volume[volume.length - 1] /
-          previousVolume
-        : 0;
+var breakoutVolumeRatio =
+  previousVolume > 0
+    ? volume[volume.length - 1] /
+      previousVolume
+    : 0;
+
+/* VALID BREAKOUT = PRICE + VOLUME */
+
+var breakout =
+  priceBreakout &&
+  breakoutVolumeRatio >= 1.5;
 
     /* RECENT BREAKOUT */
 
@@ -290,11 +296,24 @@ document.addEventListener("DOMContentLoaded", function () {
         );
 
       if (
-        close[b] >
-        priorResistance * 1.002
-      ) {
-        recentBreakout = true;
-        breakoutIndex = b;
+  close[b] >
+    priorResistance * 1.002 &&
+  (
+    avg(volume.slice(
+      Math.max(0, b - 20),
+      b
+    )) > 0
+      ? volume[b] /
+        avg(volume.slice(
+          Math.max(0, b - 20),
+          b
+        ))
+      : 0
+  ) >= 1.5
+) {
+  recentBreakout = true;
+  breakoutIndex = b;
+      }
       }
     }
 
