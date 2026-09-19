@@ -315,7 +315,7 @@ var breakout =
   breakoutIndex = b;
       }
       }
-    }
+
 
     /* RETEST */
 
