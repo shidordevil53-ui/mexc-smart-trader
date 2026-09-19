@@ -1,3 +1,4 @@
+alert("APP.JS FILE TERBACA");
 document.addEventListener("DOMContentLoaded", function () {
 alert("APP.JS AKTIF");
   var status = document.getElementById("status");
