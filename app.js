@@ -439,7 +439,7 @@ var effectiveBreakoutVolumeRatio =
   recentBreakout
     ? recentBreakoutVolumeRatio
     : breakoutVolumeRatio;
-    if (effectivebreakoutVolumeRatio >= 3) {
+    if (effectiveBreakoutVolumeRatio >= 3) {
       score += 15;
       tags.push("Volume breakout x3");
     } else if (effectivebreakoutVolumeRatio >= 2) {
