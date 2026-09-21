@@ -435,14 +435,17 @@ var recentBreakoutVolumeRatio = 0;
       score += 18;
       tags.push("Breakout");
     }
-
-    if (breakoutVolumeRatio >= 3) {
+var effectiveBreakoutVolumeRatio =
+  recentBreakout
+    ? recentBreakoutVolumeRatio
+    : breakoutVolumeRatio;
+    if (effectivebreakoutVolumeRatio >= 3) {
       score += 15;
       tags.push("Volume breakout x3");
-    } else if (breakoutVolumeRatio >= 2) {
+    } else if (effectivebreakoutVolumeRatio >= 2) {
       score += 12;
       tags.push("Volume breakout x2");
-    } else if (breakoutVolumeRatio >= 1.5) {
+    } else if (effectivebreakoutVolumeRatio >= 1.5) {
       score += 8;
       tags.push("Volume breakout kuat");
     }
