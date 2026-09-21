@@ -445,7 +445,7 @@ var effectiveBreakoutVolumeRatio =
     } else if (effectiveBreakoutVolumeRatio >= 2) {
       score += 12;
       tags.push("Volume breakout x2");
-    } else if (effectivebreakoutVolumeRatio >= 1.5) {
+    } else if (effectiveBreakoutVolumeRatio >= 1.5) {
       score += 8;
       tags.push("Volume breakout kuat");
     }
