@@ -442,7 +442,7 @@ var effectiveBreakoutVolumeRatio =
     if (effectiveBreakoutVolumeRatio >= 3) {
       score += 15;
       tags.push("Volume breakout x3");
-    } else if (effectivebreakoutVolumeRatio >= 2) {
+    } else if (effectiveBreakoutVolumeRatio >= 2) {
       score += 12;
       tags.push("Volume breakout x2");
     } else if (effectivebreakoutVolumeRatio >= 1.5) {
@@ -550,6 +550,8 @@ var effectiveBreakoutVolumeRatio =
       baseRange: baseRange,
       volumeRatio:
         breakoutVolumeRatio,
+        breakoutVolumeRatio:
+    effectiveBreakoutVolumeRatio,
       rsi: rsi14,
       ema20: ema20,
       ema50: ema50,
